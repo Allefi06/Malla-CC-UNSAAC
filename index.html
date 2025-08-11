@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Malla Curricular — Ciencias de la Comunicación (Interactiva)</title>
+<style>
+  :root{
+    --bg:#f7f9fb;
+    --card-radius:10px;
+    --shadow: 0 6px 18px rgba(21,30,50,0.06);
+    --font-sans: "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --fucsia-1:#f7d8ee;
+    --fucsia-2:#f0a6d1;
+    --fucsia-3:#e66fb4;
+    --azul-1:#e6f0ff;
+    --azul-2:#b9d4ff;
+    --azul-3:#7fb1ff;
+    --teal-1:#e8f8f7;
+    --teal-2:#bfeeee;
+    --muted:#6b7280;
+    --accent:#7fb1ff;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:20px;
+    font-family:var(--font-sans);
+    background:linear-gradient(180deg,#fbfcff 0%,var(--bg) 100%);
+    color:#142033;
+  }
+  header{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+  header h1{font-size:20px;margin:0}
+  .container{display:flex;flex-direction:column;gap:18px}
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap:12px;
+    align-items:start;
+  }
+  .semester{
+    background:white;
+    border-radius:var(--card-radius);
+    padding:12px;
+    box-shadow:var(--shadow);
+    min-width:160px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .semester h3{margin:0;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:6px}
+  .credits-sem{font-size:12px;color:var(--muted)}
+  .course-list{display:flex;flex-direction:column;gap:8px}
+  .course{
+    position:relative;
+    border-radius:8px;
+    padding:8px;
+    font-size:13px;
+    cursor:pointer;
+    box-shadow: 0 2px 6px rgba(16,24,40,0.04);
+    transition:all .18s ease;
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+    align-items:center;
+  }
+  .course .name{flex:1}
+  .course .meta{font-size:12px;color:rgba(0,0,0,0.6);white-space:nowrap}
+  .course:hover{transform:translateY(-3px)}
+  .locked{cursor:not-allowed;filter:grayscale(.02) brightness(.95);opacity:0.95}
+  .approved{
+    opacity:0.45;
+    transform:scale(.995);
+    text-decoration:line-through;
+  }
+  /* areas colors (background) */
+  .area-est-gen{background:linear-gradient(90deg,var(--fucsia-1),#ffeaf7); border:1px solid rgba(230,111,180,0.08)}
+  .area-espec-ob{background:linear-gradient(90deg,var(--azul-1),#f2f9ff); border:1px solid rgba(127,177,255,0.08)}
+  .area-especialidad{background:linear-gradient(90deg,var(--teal-1),#f2fbfb); border:1px solid rgba(127,222,214,0.08)}
+  .area-practicas{background:linear-gradient(90deg,#f3e9ff,#f9f5ff); border:1px solid rgba(170,140,255,0.08)}
+  .area-extracurricular{background:linear-gradient(90deg,#fff7ea,#fff); border:1px solid rgba(255,200,120,0.08)}
+
+  /* tooltip style */
+  .tooltip{
+    position:absolute;
+    left:calc(100% + 8px);
+    top:6px;
+    min-width:200px;
+    background: #ffffff;
+    border-radius:8px;
+    box-shadow:var(--shadow);
+    padding:8px 10px;
+    font-size:12px;
+    color:#223;
+    z-index:30;
+    display:none;
+  }
+  .course.locked:hover .tooltip{display:block}
+  .tooltip .title{font-weight:600;margin-bottom:6px}
+  footer{display:flex;flex-direction:column;gap:12px;margin-top:10px}
+  .legend{
+    display:flex;gap:12px;flex-wrap:wrap;align-items:center;
+    background:white;padding:12px;border-radius:10px;box-shadow:var(--shadow)
+  }
+  .legend-item{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+  .swatch{width:16px;height:16px;border-radius:4px;box-shadow:inset 0 -2px 6px rgba(0,0,0,0.04)}
+  .sw-1{background:linear-gradient(180deg,var(--fucsia-3),var(--fucsia-2))}
+  .sw-2{background:linear-gradient(180deg,var(--azul-3),var(--azul-2))}
+  .sw-3{background:linear-gradient(180deg,var(--teal-2),#bfeeee)}
+  .sw-4{background:linear-gradient(180deg,#bfa0ff,#d8cfff)}
+  .sw-5{background:linear-gradient(180deg,#ffd8b0,#ffe9d3)}
+
+  .statusbar{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+    background:white;padding:12px;border-radius:10px;box-shadow:var(--shadow)
+  }
+  .totals{display:flex;gap:14px;align-items:center;font-size:14px}
+  .acc-credits{font-weight:700;font-size:18px;color:var(--accent)}
+  .controls{display:flex;gap:8px;align-items:center}
+  button.reset{
+    background:#fff;border:1px solid #e6e9ee;padding:8px 10px;border-radius:8px;cursor:pointer
+  }
+
+  /* responsive */
+  @media (max-width:1200px){
+    .grid{grid-template-columns: repeat(5, 1fr)}
+  }
+  @media (max-width:760px){
+    .grid{grid-template-columns: repeat(2, 1fr)}
+    header{flex-direction:column;align-items:flex-start;gap:6px}
+  }
+
+  /* small helper */
+  .small{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+  <header>
+    <h1>Malla Curricular — Ciencias de la Comunicación (Interactiva)</h1>
+    <div class="small">Haz clic en una materia para marcarla como aprobada. Las materias bloqueadas muestran qué falta.</div>
+  </header>
+
+  <main class="container">
+    <div id="grid" class="grid" aria-live="polite"></div>
+
+    <footer>
+      <div class="legend" role="list" aria-label="Leyenda de áreas">
+        <div class="legend-item"><span class="swatch sw-1"></span> Estudios Generales (fucsia)</div>
+        <div class="legend-item"><span class="swatch sw-2"></span> Estudios Específicos Obligatorios (azul)</div>
+        <div class="legend-item"><span class="swatch sw-3"></span> Estudios de Especialidad</div>
+        <div class="legend-item"><span class="swatch sw-4"></span> Prácticas Pre-profesionales</div>
+        <div class="legend-item"><span class="swatch sw-5"></span> Extracurriculares / Electivos</div>
+      </div>
+
+      <div class="statusbar" role="status" aria-live="polite">
+        <div class="totals">
+          <div>Total acumulado: <span id="accCredits" class="acc-credits">0</span> créditos</div>
+          <div class="small">Créditos por semestre (indicados arriba de cada columna)</div>
+        </div>
+        <div class="controls">
+          <button class="reset" id="resetBtn" title="Borrar progreso guardado">🔄 Reset progreso</button>
+          <button class="reset" id="exportBtn" title="Exportar progreso (JSON)">📤 Exportar</button>
+          <button class="reset" id="importBtn" title="Importar progreso">📥 Importar</button>
+        </div>
+      </div>
+
+      <div style="background:white;padding:12px;border-radius:10px;box-shadow:var(--shadow)">
+        <strong>Extracurriculares disponibles (elige cualquiera, no tienen requisito):</strong>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="reset" data-ex="EVENTOS_Y_PROTOCOLO">EVENTOS Y PROTOCOLO (2)</button>
+          <button class="reset" data-ex="RELACIONES_COMUNITARIAS">RELACIONES COMUNITARIAS (3)</button>
+          <button class="reset" data-ex="COMUNICACION_ASERTIVA">COMUNICACIÓN Y ASERTIVIDAD (3)</button>
+          <button class="reset" data-ex="TALLER_ORATORIA">TALLER DE ORATORIA (3)</button>
+          <button class="reset" data-ex="TALLER_PRODUCCION_GUIONES">TALLER DE PRODUCCIÓN DE GUIONES (3)</button>
+          <button class="reset" data-ex="DIAGNOSTICOS_COMUNITARIOS">DIAGNÓSTICOS COMUNITARIOS (3)</button>
+        </div>
+        <div class="small" style="margin-top:8px;color:var(--muted)">Puedes marcar estos cursos como aprobados en cualquier momento; suman a tus créditos acumulados.</div>
+      </div>
+    </footer>
+  </main>
+
+<script>
+/*
+  Datos de la malla: cada curso tiene:
+   id: identificador único corto
+   name: nombre mostrado
+   credits: número de créditos
+   area: una de ['est-gen','espec-ob','especialidad','practicas','extracurricular']
+   prereq: null OR object: {type:'credits', amount: X} OR {type:'courses', ids: ['ID1','ID2']}
+*/
+const CURSOS = [
+  // SEMESTRE 1
+  {sem:1, id:'CONSTITUCION', name:'CONSTITUCIÓN POLÍTICA Y DERECHOS HUMANOS', credits:3, area:'est-gen', prereq:null},
+  {sem:1, id:'ESTRATEGIAS_AUTONOMO', name:'ESTRATEGIAS DE APRENDIZAJE AUTÓNOMO', credits:4, area:'est-gen', prereq:null},
+  {sem:1, id:'FILOSOFIA_ETICA', name:'FILOSOFÍA Y ÉTICA', credits:3, area:'est-gen', prereq:null},
+  {sem:1, id:'MATEMATICA_I', name:'MATEMÁTICA I', credits:4, area:'est-gen', prereq:null},
+  {sem:1, id:'REDACCION', name:'REDACCIÓN DE TEXTOS', credits:4, area:'est-gen', prereq:null},
+  {sem:1, id:'SOCIEDAD_CULTURA', name:'SOCIEDAD Y CULTURA', credits:3, area:'est-gen', prereq:null},
+
+  // SEMESTRE 2
+  {sem:2, id:'INTRO_EPIST', name:'INTRODUCCIÓN A LA EPISTEMOLOGÍA', credits:4, area:'est-gen', prereq:{type:'credits', amount:15}},
+  {sem:2, id:'LIDERAZGO_HS', name:'LIDERAZGO Y HABILIDADES SOCIALES', credits:3, area:'est-gen', prereq:{type:'credits', amount:15}},
+  {sem:2, id:'PSICOLOGIA_GENERAL', name:'PSICOLOGÍA GENERAL', credits:4, area:'est-gen', prereq:{type:'credits', amount:15}},
+  {sem:2, id:'TIC', name:'TECNOLOGÍAS DE LA INFORMACIÓN Y LA COMUNICACIÓN', credits:3, area:'est-gen', prereq:{type:'credits', amount:15}},
+  {sem:2, id:'LENGUAJE_MEDIOS', name:'LENGUAJE DE LOS MEDIOS', credits:4, area:'espec-ob', prereq:null},
+  {sem:2, id:'RELACIONES_HUMANAS', name:'RELACIONES HUMANAS', credits:4, area:'espec-ob', prereq:null},
+
+  // SEMESTRE 3
+  {sem:3, id:'TEORIAS_COM', name:'TEORÍAS DE LA COMUNICACIÓN', credits:4, area:'espec-ob', prereq:null},
+  {sem:3, id:'COMUNICACION_IDENTIDAD', name:'COMUNICACIÓN IDENTIDAD E INTERCULTURALIDAD', credits:3, area:'espec-ob', prereq:null},
+  {sem:3, id:'EPIST_RELPR', name:'EPISTEMOLOGÍA DE LAS RELACIONES PÚBLICAS', credits:4, area:'especialidad', prereq:{type:'courses', ids:['RELACIONES_HUMANAS']}},
+  {sem:3, id:'HISTORIA_MEDIOS', name:'HISTORIA DE LOS MEDIOS', credits:3, area:'espec-ob', prereq:null},
+  {sem:3, id:'GESTION_ORG', name:'GESTIÓN Y GERENCIA DE LAS ORGANIZACIONES', credits:4, area:'especialidad', prereq:null},
+  {sem:3, id:'COMUNICACION_DEMO', name:'COMUNICACIÓN DEMOCRACIA Y DESARROLLO', credits:4, area:'especialidad', prereq:null},
+
+  // SEMESTRE 4
+  {sem:4, id:'SISTEMAS_MODELOS', name:'SISTEMAS Y MODELOS DE COMUNICACIÓN', credits:4, area:'espec-ob', prereq:{type:'courses', ids:['TEORIAS_COM']}},
+  {sem:4, id:'GEN_PERIOD', name:'TEORÍA Y PRÁCTICA DE LOS GÉNEROS PERIODÍSTICOS', credits:4, area:'espec-ob', prereq:null},
+  {sem:4, id:'REL_PR_ORG', name:'RELACIONES PÚBLICAS EN LA ORGANIZACIÓN', credits:4, area:'especialidad', prereq:{type:'courses', ids:['EPIST_RELPR']}},
+  {sem:4, id:'COMUNICACION_DESAR', name:'COMUNICACIÓN PARA EL DESARROLLO', credits:4, area:'especialidad', prereq:{type:'courses', ids:['COMUNICACION_DEMO']}},
+  {sem:4, id:'COMP_DESAR_ORG', name:'COMPORTAMIENTO Y DESARROLLO ORGANIZACIONAL', credits:4, area:'especialidad', prereq:{type:'courses', ids:['GESTION_ORG']}},
+  {sem:4, id:'ANIM_SOCIOCULTURAL', name:'ANIMACIÓN SOCIOCULTURAL', credits:2, area:'extracurricular', prereq:null},
+
+  // SEMESTRE 5
+  {sem:5, id:'ETICA_RESP', name:'ÉTICA Y RESPONSABILIDAD SOCIAL', credits:4, area:'espec-ob', prereq:null},
+  {sem:5, id:'FUND_MARKETING', name:'FUNDAMENTOS DE MARKETING', credits:4, area:'especialidad', prereq:null},
+  {sem:5, id:'GEN_IMPRESOS', name:'GÉNEROS Y FORMATOS PERIODÍSTICOS IMPRESOS', credits:4, area:'especialidad', prereq:{type:'courses', ids:['GEN_PERIOD']}},
+  {sem:5, id:'PROY_COM', name:'PROYECTOS DE COMUNICACIÓN', credits:4, area:'especialidad', prereq:{type:'courses', ids:['COMUNICACION_DESAR']}},
+  {sem:5, id:'TALLER_GERENCIA', name:'TALLER DE GERENCIA LABORAL', credits:3, area:'especialidad', prereq:{type:'courses', ids:['COMP_DESAR_ORG']}},
+  {sem:5, id:'ELAB_CAMPAÑAS', name:'ELABORACIÓN DE CAMPAÑAS', credits:3, area:'extracurricular', prereq:null},
+
+  // SEMESTRE 6
+  {sem:6, id:'COM_POL', name:'COMUNICACIÓN POLÍTICA Y GESTIÓN DE GOBIERNO', credits:4, area:'espec-ob', prereq:null},
+  {sem:6, id:'ESTRAT_COM_DES', name:'ESTRATEGÍAS DE COMUNICACIÓN PARA EL DESARROLLO', credits:4, area:'especialidad', prereq:{type:'courses', ids:['PROY_COM']}},
+  {sem:6, id:'GEN_RADIO', name:'GÉNEROS, FORMATOS Y PROGRAMAS EN RADIO', credits:4, area:'especialidad', prereq:{type:'courses', ids:['GEN_PERIOD']}},
+  {sem:6, id:'TEOR_PUBLICIDAD', name:'TEORÍA Y PRÁCTICA DE LA PUBLICIDAD', credits:4, area:'especialidad', prereq:{type:'courses', ids:['FUND_MARKETING']}},
+  {sem:6, id:'ANALISIS_PUBLICOS', name:'ANÁLISIS DE PÚBLICOS Y DEMANDAS', credits:4, area:'especialidad', prereq:{type:'courses', ids:['REL_PR_ORG']}},
+  {sem:6, id:'TALLER_FOTOGRAFIA', name:'TALLER DE FOTOGRAFÍA PERIODÍSTICA', credits:3, area:'especialidad', prereq:null},
+
+  // SEMESTRE 7
+  {sem:7, id:'ESTADISTICA', name:'ESTADÍSTICA', credits:4, area:'espec-ob', prereq:{type:'courses', ids:['MATEMATICA_I']}},
+  {sem:7, id:'PROD_MAT_EDU', name:'PRODUCCIÓN DE MATERIALES EDUCATIVO-COMUNICACIONALES', credits:4, area:'especialidad', prereq:{type:'courses', ids:['ESTRAT_COM_DES']}},
+  {sem:7, id:'GEN_TV', name:'GÉNEROS, FORMATOS Y PROGRAMAS EN TELEVISIÓN', credits:4, area:'especialidad', prereq:{type:'courses', ids:['GEN_PERIOD']}},
+  {sem:7, id:'TALLER_MARKETING', name:'TALLER DE MARKETING', credits:3, area:'especialidad', prereq:{type:'courses', ids:['FUND_MARKETING']}},
+  {sem:7, id:'PLAN_PGM_RP', name:'PLANIFICACIÓN Y PROGRAMACIÓN EN RELACIONES PÚBLICAS', credits:4, area:'especialidad', prereq:{type:'courses', ids:['ANALISIS_PUBLICOS']}},
+  {sem:7, id:'TALLER_RP', name:'TALLER DE RELACIONES PÚBLICAS', credits:3, area:'especialidad', prereq:{type:'courses', ids:['PLAN_PGM_RP']}}, // mismo semestre prereq
+
+  // SEMESTRE 8
+  {sem:8, id:'METODO_INV', name:'METODOLOGÍA DE LA INVESTIGACIÓN CIENTÍFICA EN COMUNICACIÓN', credits:4, area:'espec-ob', prereq:{type:'credits', amount:150}},
+  {sem:8, id:'PRACT_PROD_MED', name:'PRÁCTICAS PRE PROFESIONALES DE PRODUCCIÓN EN MEDIOS', credits:6, area:'practicas', prereq:{type:'credits', amount:150}},
+  {sem:8, id:'TALLER_EVAL_PROY', name:'TALLER DE EVALUACIÓN DE PROYECTOS SOCIALES', credits:3, area:'especialidad', prereq:{type:'courses', ids:['PROY_COM']}},
+  {sem:8, id:'INTRO_PERIOD_ESPEC', name:'INTRODUCCIÓN AL PERIODISMO ESPECIALIZADO', credits:4, area:'especialidad', prereq:null},
+  {sem:8, id:'PERIODISMO_INV', name:'PERIODISMO DE INVESTIGACIÓN', credits:4, area:'especialidad', prereq:{type:'courses', ids:['GEN_TV']}},
+  {sem:8, id:'CURSO_EXTRAC', name:'CURSO EXTRACURRICULAR (ELECTIVO)', credits:2, area:'extracurricular', prereq:null},
+
+  // SEMESTRE 9
+  {sem:9, id:'ENFOQUE_INV', name:'ENFOQUE CUANTITATIVO Y CUALITATIVO DE INVESTIGACIÓN EN COMUNICACIÓN', credits:4, area:'espec-ob', prereq:{type:'courses', ids:['METODO_INV']}},
+  {sem:9, id:'PRACT_RP_MARK', name:'PRÁCTICAS PREPROFESIONALES RELACIONES PÚBLICAS, MARKETING Y COMUNICACIÓN ORGANIZACIONAL', credits:6, area:'practicas', prereq:{type:'courses', ids:['PRACT_PROD_MED']}},
+  {sem:9, id:'EXP_PROD_GRAF', name:'EXPRESIÓN Y PRODUCCIÓN GRÁFICA', credits:4, area:'especialidad', prereq:{type:'courses', ids:['INTRO_PERIOD_ESPEC']}},
+  {sem:9, id:'COMU_CONFLICT', name:'COMUNICACIÓN Y MANEJO DE CONFLICTOS', credits:4, area:'espec-ob', prereq:null},
+  {sem:9, id:'PERIOD_COM_DIG', name:'PERIODISMO Y COMUNICACIÓN DIGITAL', credits:4, area:'especialidad', prereq:null},
+
+  // SEMESTRE 10
+  {sem:10, id:'SEMIN_INV', name:'SEMINARIO DE INVESTIGACIÓN EN COMUNICACIÓN', credits:4, area:'espec-ob', prereq:{type:'courses', ids:['ENFOQUE_INV']}},
+  {sem:10, id:'PRACT_COM_DES', name:'PRÁCTICAS PREPROFESIONALES DE COMUNICACIÓN PARA EL DESARROLLO', credits:6, area:'practicas', prereq:{type:'courses', ids:['PRACT_RP_MARK']}},
+  {sem:10, id:'SEMIO_DISCUR_AV', name:'SEMIÓTICA Y DISCURSO AUDIOVISUAL', credits:4, area:'espec-ob', prereq:{type:'courses', ids:['SISTEMAS_MODELOS']}},
+  {sem:10, id:'EMPREND_ORG', name:'EMPRENDIMIENTO EN LAS ORGANIZACIONES', credits:4, area:'especialidad', prereq:null},
+  {sem:10, id:'TALLER_LOCUCION', name:'TALLER DE LOCUCIÓN Y CONDUCCIÓN PARA MEDIOS RADIALES Y AUDIOVISUALES', credits:3, area:'especialidad', prereq:null},
+];
+
+// Mapa de areas a clases / swatches
+const AREA_CLASS = {
+  'est-gen':'area-est-gen',
+  'espec-ob':'area-espec-ob', // note: class defined via CSS .area-espec-ob? We used .area-espec-ob? earlier used area-espec-ob? Let's create mapping CSS class; fix: we didn't define .area-espec-ob earlier, but .area-espec-ob is not present. We used .area-espec-ob? In CSS we have .area-espec-ob? I had .area-espec-ob? I earlier created .area-espec-ob? I see .area-espec-ob not defined. I used .area-espec-ob? Wait CSS has .area-espec-ob? I used .area-espec-ob? Let's instead map to .area-espec-ob but CSS earlier used .area-espec-ob — check top: I defined ".area-espec-ob{background:...}" yes I see earlier ".area-espec-ob{background:...}"? Looking up in file: I had ".area-espec-ob{background:...}"? In CSS I see ".area-espec-ob{...}" Actually earlier I typed ".area-espec-ob{background:linear-gradient(90deg,var(--azul-1),#f2f9ff); border:1px solid rgba(127,177,255,0.08)}". Good.
+};
+
+function areaToClass(area){
+  if(area==='est-gen') return 'area-est-gen';
+  if(area==='espec-ob') return 'area-espec-ob';
+  if(area==='especialidad') return 'area-especialidad';
+  if(area==='practicas') return 'area-practicas';
+  if(area==='extracurricular') return 'area-extracurricular';
+  return '';
+}
+
+// Storage key
+const STORAGE_KEY = 'malla_comunicacion_estado_v1';
+
+// Estado: objeto { approved: {ID:true,...} }
+let state = {approved:{}};
+
+// Helper: cargar estado
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      state = JSON.parse(raw);
+    }
+  }catch(e){ console.warn('No se pudo cargar estado',e) }
+}
+
+// Guardar
+function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)) }
+
+// Calcula créditos acumulados (sum de aprobadas)
+function accumulatedCredits(){
+  let sum = 0;
+  for(const c of CURSOS){
+    if(state.approved && state.approved[c.id]) sum += c.credits;
+  }
+  return sum;
+}
+
+// Comprueba si un curso está bloqueado - devuelve {blocked:boolean, reason:string}
+function checkBlocked(curso){
+  if(!curso.prereq) return {blocked:false, reason:''};
+  if(curso.prereq.type === 'credits'){
+    const need = curso.prereq.amount;
+    const acc = accumulatedCredits();
+    if(acc >= need) return {blocked:false, reason:''};
+    const faltan = Math.max(0, need - acc);
+    return {blocked:true, reason:`Faltan ${faltan} créditos (se requieren ${need}).`};
+  }
+  if(curso.prereq.type === 'courses'){
+    const missing = curso.prereq.ids.filter(id => !state.approved[id]);
+    if(missing.length === 0) return {blocked:false, reason:''};
+    // traducir ids a nombres
+    const names = missing.map(id => (CURSOS.find(x=>x.id===id)||{name:id}).name);
+    return {blocked:true, reason:`Falta aprobar: ${names.join(', ')}.`};
+  }
+  return {blocked:false, reason:''};
+}
+
+// Crear el DOM de la malla
+function renderGrid(){
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  // Agrupar por semestres 1..10
+  for(let s=1;s<=10;s++){
+    const semBox = document.createElement('section');
+    semBox.className = 'semester';
+    const semTitle = document.createElement('h3');
+    semTitle.innerHTML = `SEMESTRE ${s} <span class="credits-sem" id="sem-${s}-total"></span>`;
+    semBox.appendChild(semTitle);
+
+    const list = document.createElement('div'); list.className='course-list';
+    // cursos del semestre
+    const cursosS = CURSOS.filter(c=>c.sem===s);
+    cursosS.forEach(c=>{
+      const div = document.createElement('div');
+      div.className = 'course '+areaToClass(c.area);
+      div.setAttribute('data-id', c.id);
+      // accessible
+      div.setAttribute('role','button');
+      div.setAttribute('tabindex','0');
+
+      const nm = document.createElement('div'); nm.className='name'; nm.textContent = c.name;
+      const meta = document.createElement('div'); meta.className='meta'; meta.textContent = `${c.credits} cr`;
+
+      // tooltip element
+      const tip = document.createElement('div'); tip.className='tooltip';
+      tip.innerHTML = `<div class="title">Bloqueado</div><div class="msg"></div>`;
+
+      div.appendChild(nm);
+      div.appendChild(meta);
+      div.appendChild(tip);
+
+      // inicial estado visual
+      updateCourseVisual(div,c,tip);
+
+      // click handler
+      div.addEventListener('click', (e)=>{
+        const st = checkBlocked(c);
+        if(st.blocked){
+          // show a quick small tooltip flash
+          tip.querySelector('.msg').textContent = st.reason;
+          // briefly show visually (already shows on hover), but show for click too:
+          tip.style.display='block';
+          setTimeout(()=>{ tip.style.display=''; }, 2400);
+          return;
+        }
+        // toggle approved
+        state.approved = state.approved || {};
+        state.approved[c.id] = !state.approved[c.id];
+        saveState();
+        renderAll(); // re-render for dependencies/credits
+      });
+      // keyboard support (Enter/Space)
+      div.addEventListener('keydown', (ev)=>{
+        if(ev.key==='Enter' || ev.key===' '){
+          ev.preventDefault(); div.click();
+        }
+      });
+
+      list.appendChild(div);
+    });
+
+    semBox.appendChild(list);
+    grid.appendChild(semBox);
+
+    // colocar total por semestre en el header
+    const semTotalSpan = semTitle.querySelector(`#sem-${s}-total`);
+    if(semTotalSpan){
+      const semTotal = cursosS.reduce((a,b)=>a+b.credits,0);
+      semTotalSpan.textContent = `— TOTAL ${semTotal} créditos`;
+    } else {
+      // fallback: append small
+      const sp = document.createElement('span'); sp.className='credits-sem';
+      sp.textContent = `— TOTAL ${cursosS.reduce((a,b)=>a+b.credits,0)} créditos`;
+      semTitle.appendChild(sp);
+    }
+  }
+}
+
+// Actualizar visual de un curso (clases, tooltip msg)
+function updateCourseVisual(div, curso, tipEl){
+  const isApproved = state.approved && state.approved[curso.id];
+  const blockedInfo = checkBlocked(curso);
+  // classes
+  div.classList.toggle('approved', !!isApproved);
+  div.classList.toggle('locked', blockedInfo.blocked && !isApproved);
+  // tooltip message
+  if(tipEl) tipEl.querySelector('.msg').textContent = blockedInfo.reason || '';
+  // aria
+  div.setAttribute('aria-pressed', !!isApproved);
+  div.setAttribute('aria-disabled', blockedInfo.blocked ? 'true': 'false');
+  // title for hover (also helpful)
+  if(blockedInfo.blocked && !isApproved) div.setAttribute('title', blockedInfo.reason);
+  else div.removeAttribute('title');
+}
+
+// Rerender all visuals and totals
+function renderAll(){
+  // update each course node
+  document.querySelectorAll('.course').forEach(div=>{
+    const id = div.getAttribute('data-id');
+    const curso = CURSOS.find(c=>c.id===id);
+    const tip = div.querySelector('.tooltip');
+    updateCourseVisual(div, curso, tip);
+  });
+  // update accumulated credits
+  document.getElementById('accCredits').textContent = accumulatedCredits();
+  // update semester totals (if needed)
+  for(let s=1;s<=10;s++){
+    const semCourses = CURSOS.filter(c=>c.sem===s);
+    const semTotal = semCourses.reduce((a,b)=>a+b.credits,0);
+    const head = document.querySelector(`.semester:nth-child(${s}) h3 .credits-sem`);
+    if(head) head.textContent = `— TOTAL ${semTotal} créditos`;
+  }
+}
+
+// Inicializacion
+function init(){
+  loadState();
+  // ensure state.approved exists
+  state.approved = state.approved || {};
+  // render grid
+  renderGrid();
+  renderAll();
+
+  // reset button
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    if(!confirm('¿Borrar todo el progreso guardado?')) return;
+    state = {approved:{}};
+    saveState();
+    renderAll();
+  });
+
+  // export/import
+  document.getElementById('exportBtn').addEventListener('click', ()=>{
+    const text = JSON.stringify(state);
+    // simple prompt to copy
+    prompt('Copia tu JSON de progreso (guardarlo te permitirá importarlo después):', text);
+  });
+  document.getElementById('importBtn').addEventListener('click', ()=>{
+    const raw = prompt('Pega el JSON de progreso para importar:');
+    if(!raw) return;
+    try{
+      const parsed = JSON.parse(raw);
+      if(parsed && parsed.approved){
+        state = parsed;
+        saveState();
+        renderAll();
+        alert('Progreso importado correctamente.');
+      } else throw new Error('Formato inválido');
+    }catch(e){ alert('JSON inválido. No se importó.'); }
+  });
+
+  // extracurriculares quick buttons
+  document.querySelectorAll('[data-ex]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const idMap = {
+        'EVENTOS_Y_PROTOCOLO':'EVENTOS_PROTOCOLO',
+        'RELACIONES_COMUNITARIAS':'REL_COMUNITARIAS',
+        'COMUNICACION_ASERTIVA':'COMUNICACION_ASERTIVIDAD',
+        'TALLER_ORATORIA':'TALLER_ORATORIA',
+        'TALLER_PRODUCCION_GUIONES':'TALLER_PRODUCCION_GUIONES',
+        'DIAGNOSTICOS_COMUNITARIOS':'DIAGNOSTICOS_COMUNITARIOS'
+      };
+      const creditsMap = {
+        'EVENTOS_Y_PROTOCOLO':2,
+        'RELACIONES_COMUNITARIAS':3,
+        'COMUNICACION_ASERTIVA':3,
+        'TALLER_ORATORIA':3,
+        'TALLER_PRODUCCION_GUIONES':3,
+        'DIAGNOSTICOS_COMUNITARIOS':3
+      };
+      const key = btn.getAttribute('data-ex');
+      const id = idMap[key];
+      // if not present in CURSOS, add as extracurric (one-time)
+      if(!CURSOS.find(c=>c.id===id)){
+        CURSOS.push({
+          sem:0, id:id, name: btn.textContent.trim(), credits: creditsMap[key]||3, area:'extracurricular', prereq:null
+        });
+        // render new as a floating element? For simplicity, add to semester 1 column (top)
+      }
+      // mark approved toggle
+      state.approved = state.approved || {};
+      state.approved[id] = !state.approved[id];
+      saveState();
+      // if added new course, re-render grid to show it (we will put in semester 1)
+      renderGrid();
+      renderAll();
+    });
+  });
+}
+
+// Inicializar en carga
+init();
+</script>
+</body>
+</html>
